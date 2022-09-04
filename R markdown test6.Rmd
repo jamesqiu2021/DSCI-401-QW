@@ -84,5 +84,20 @@ for (i in c(2, 3, 5, 7, 11)){
   print(i)
 }
 ```
+```{r}
+sky <- "cloudy"
+if (sky == "sunny"){
+  print("Leave your umbrella at home!")
+}
+
+```
+```{r}
+sky <- "raining"
+if (sky == "sunny")
+  {print("Leave your umbrella at home!") 
+} else {
+  print("Bring your umbrella")
+}
+```
 
 
