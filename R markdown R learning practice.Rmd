@@ -97,6 +97,7 @@ if (sky == "sunny")
   {print("Leave your umbrella at home!") 
 } else {
   print("Bring your umbrella")
+}
 ```
 
 ```{r}
@@ -175,5 +176,43 @@ ceiling(7 / 2)
 ```{r}
 4 + 7i
 class(4 + 7i)
+```
+```{r}
+a <- 5
+class(a)
+a
+a <- as.integer(a)
+class(a)
+```
+# don't understand
+```{r}
+a <- 2.1 + 4.2
+a == 6.3
+a
+class(a)
+```
+```{r}
+find_max <- function(a, b) {
+  if (a > b) {
+    return(a)
+  } else {
+    return(b)
+  }
+}
+find_max (1,5)
+find_max (3,6)
+```
+`````{r}
+find_max (2,3)
+```
+}
+
+```{r}
+x <- 1
+while (x <= as.integer (3000/9.6)){
+print (x)
+x <- x + 1
+}
+cat("The number of bricks needed = ",x)
 ```
 
