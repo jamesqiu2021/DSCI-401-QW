@@ -1,0 +1,93 @@
+---
+title: "HW1"
+author: "Wei Qiu"
+date: "2022-09-08"
+output: html_document
+---
+
+```{r}
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+cubs <- read_csv("https://raw.githubusercontent.com/gjm112/DSCI401/main/data/cubs_all_time.csv")
+```
+
+```{r}
+cubs <- read.csv("https://raw.githubusercontent.com/gjm112/DSCI401/main/data/cubs_all_time.csv")
+```
+
+#Q1(a) How many total games have the Cubs won and lost between 1876 and 2022?
+
+```{r}
+sum(cubs$W)
+sum(cubs$L)
+sum(cubs$W+cubs$L)
+```
+
+#Q1b What year did the Cubs score the most runs? What year did the Cubs score the fewest runs? Do you have any thoughts about the year that the Cubs scored the fewest runs?
+
+#Which year did the cubs score the most runs?
+
+```{r}
+subset(cubs, R==max(R))
+```
+
+#Which year did the cubs score the fewest runs?
+
+```{r}
+subset(cubs, R==min(R))
+```
+
+#Do you have any thoughts about the year that the Cubs scored the fewest runs? \# My answer: They scored the fewest runs in 2020 because the fewest games were played, probally due to COVID.
+
+```{r}
+summary(cubs, R==min(R))
+```
+
+#Q2c:In how many seasons was the Cubs total attendance (i.e. the variable Attendance) over 3 million?
+
+```{r}
+subset(cubs, Attendance>=3000000)
+```
+#Q3.https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/HW1_WQ.ipynb
+
+#Q4. .  57.3% of Chicago’s population is Black or Latino. 71% of San Antonio’s population is Black or Latino. Chicago has given out 301,000 vaccines and 43.4% of these were to Black or Latino residents. San Antonio has given out 266,000 vaccines and 57.2% of these were to Black orLatino residents. Which of the cities had a more equitable distribution of vaccines? (Note: This is a wildly open ended question.)
+```{r}
+ Cvdn <- as.numeric(43.4 / 57.3) 
+ class (Cvdn)
+ Svdn <- as.numeric (57.2 / 71)
+ class (Svdn)
+ if (Cvdn > Svdn) {
+ print ("Chicago had a more equitable distribution of vaccines than San Antonia")
+ } else { 
+ print ("San Antonia had a more equitable distribution of vaccines than Chicago")}
+
+```
+
+
+1
