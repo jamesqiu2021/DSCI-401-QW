@@ -1,0 +1,173 @@
+---
+title: "HW2"
+author: "Wei Qiu"
+date: "2022-09-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(tidyverse)
+library(mdsr)
+```
+
+```{r}
+Teams <- read.csv("https://raw.githubusercontent.com/gjm112/DSCI401/main/data/Teams.csv")
+```
+
+# 1 (a) Create a data frame that is a subset of the Teams data frame that contains only the years from 2000 through 2009 and the variables yearID, W, and L.
+
+```{r}
+Myteams <- filter(Teams, yearID==(2000:2009)) 
+Myteams [c("yearID","W","L")]
+```
+
+# 1 (b) How many years did the Chicago Cubs (teamID is \CHN") hit at least 200 HRs in a season and what was the median number of wins in those seasons.
+
+```{r}
+Cubs <- Teams %>% filter(teamID == "CHN") %>% filter(HR >= 200) %>% group_by(HR)   
+Cubs
+```
+
+```{r}
+nrow(Cubs)
+```
+
+```{r}
+Cubs <- Teams %>% filter(teamID == "CHN") %>% filter(HR >= 200) %>% group_by(HR) %>% summarize(mn_wins = mean(W))
+Cubs
+mean(Cubs$mn_wins)
+```
+
+#1(c) Create a factor called election that divides the yearID into 4-year blocks that correspond to U.S. presidential terms. The first presidential term started in 1788. They each last 4 years and are still on the schedule set in 1788. During which term have the most home runs been hit?
+
+1)  create a factor name election
+2)  divide yearID into 4-year blocks that correspond to U.S. presidential terms, that started in 1788
+3)  determine during which term have the most home runs been hit
+
+```{r}
+yearBreaks <- seq(1788,2021, by = 4)
+Myteams <-Teams %>% 
+mutate(election = cut(yearID, breaks = yearBreaks)) %>% 
+group_by(election) %>% 
+summarise(THR = sum(HR)) %>% 
+arrange (desc(THR))
+Myteams
+```
+
+# 1(d) Make a line plot of total home runs per season and stratify by league. Remove observations where league is missing.
+
+```{r}
+ Teams$lgID<-as.character(Teams$lgID)
+THRteams <-Teams %>% 
+  drop_na(lgID) %>%  
+  select(lgID,HR) %>%  
+  group_by (lgID) %>% 
+  summarize (THR = sum(HR)) %>% 
+  arrange (desc(THR)) 
+THRteams
+```
+
+```{r}
+Teams$lgID<-as.character(Teams$lgID)
+THRteams <-Teams %>% 
+  drop_na(lgID) %>%  
+  select(lgID,yearID,HR) %>%  
+  group_by (lgID,yearID) %>% 
+  summarize (THR = sum(HR)) %>% 
+  arrange (desc(THR)) 
+THRteams
+```
+
+```{r}
+g <- ggplot(data = THRteams, aes(x = yearID, y = THR)) + 
+  geom_point(aes(color = lgID)) + geom_smooth(aes(color = lgID), method = "lm", se = FALSE) + facet_wrap(~ lgID)
+g
+```
+
+# 1(e) Create an indicator variable called winning_record" which is defined as TRUE if the number of wins is greater than the number of losses and FALSE otherwise. Plot a scatter plot of Runs (R) vs Runs against (RA) with the color of each point showing whether that team had a winning record or not.
+
+```{r}
+WRteams <- Teams %>% 
+  mutate (Winning_record = ifelse(W>L,"TRUE", "FALSE"))
+```
+
+```{r}
+g <- ggplot(data = WRteams, aes(x = R, y = RA)) + 
+  geom_point(aes(color = Winning_record)) + xlab("Runs") +
+  ylab("Runs against") 
+g
+
+```
+
+# 2(a) What month had the highest proportion of cancelled fights? What month had the lowest? Interpret any seasonal patterns.
+
+```{r}
+library (nycflights13)
+myflights <- flights %>% 
+  filter (is.na(dep_time)) %>% 
+  group_by(month) %>% 
+  summarize (highest_cancelled = max(sum(is.na(dep_time))))%>% 
+  arrange (desc(highest_cancelled))
+myflights
+```
+
+# Feb. had the hightest cancelled flights and Nov. had the lowest cancelled flights. Winter (Dec-Feb) had the most canelled flights and fall (Aug-Nov) had the least cancelled flights.
+
+# 2(b) Given that a delay is longer than an hour, what is the average time of the total delay by airport (i.e. origin)
+
+```{r}
+flights %>% filter (arr_delay > 60) %>% group_by(origin) %>% summarize (average_time_delay = mean (arr_delay))
+```
+
+# 2(c) What is the average air time for all fights by carrier? Which carrier has the longest average air time on their fights?
+
+```{r}
+flights %>% drop_na (air_time) %>%  group_by(carrier) %>% summarise(average_air_time = mean (air_time)) %>% arrange(desc(average_air_time))
+```
+
+# 2(d) Keeping only fights that had a delay greater than 0, create a histogram for each month of the delay data.
+
+```{r}
+flights %>% filter (arr_delay > 0) 
+ggplot(data = flights,aes(x = month),y = arr_delay) + geom_histogram()
+```
+
+# 2(e) Create side-by-side boxplots of delay times for fights with delays 60 minutes or greater for the top
+
+```{r}
+flights %>% filter (arr_delay >= 60) 
+g <- ggplot(flights, aes(x=origin, y=arr_delay)) + 
+  geom_boxplot()
+g
+
+```
+
+#Homework with Python:
+
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/HW2-QW.ipynb
+
+

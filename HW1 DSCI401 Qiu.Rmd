@@ -33,9 +33,7 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-```{r}
-cubs <- read_csv("https://raw.githubusercontent.com/gjm112/DSCI401/main/data/cubs_all_time.csv")
-```
+
 
 ```{r}
 cubs <- read.csv("https://raw.githubusercontent.com/gjm112/DSCI401/main/data/cubs_all_time.csv")

@@ -1,0 +1,179 @@
+---
+title: "HW3-WQ"
+author: "Wei Qiu"
+date: "2022-09-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#1. Use the Batting, Pitching, and Master tables in the Lahman package to answer the following questions:
+
+
+```{r}
+library(tidyverse)
+library(mdsr)
+library(Lahman)
+library(nycflights13)
+library(dplyr)
+library(pccc)
+```
+
+
+#1(a) (10 points) Name every player in baseball history who has accumulated at least 300 home runs (HR) and at least 300 stolen bases (SB).You can find the first and last name of the player in the Master data frame. Join this to your result along with the total home runs and total bases stolen for each of these elite players.
+
+
+```{r}
+Batting_name <- Batting %>% inner_join(People,by=c("playerID"="playerID"))
+
+Q1a <- Batting_name %>% 
+select(yearID, playerID, HR,SB,nameFirst,nameLast) %>% group_by(playerID) %>% 
+summarize(player_name = paste(nameFirst[1], nameLast[1]),THR=sum(HR),TSB=sum(SB)) %>% 
+filter(THR>=300 & TSB>=300) %>% 
+arrange(playerID)
+Q1a
+```
+#another method:
+```{r}
+Q1a_2 <- Batting %>% 
+select(yearID, playerID, HR,SB) %>% group_by(playerID) %>% 
+summarize(THR=sum(HR),TSB=sum(SB)) %>% 
+filter(THR>=300 & TSB>=300) %>% 
+arrange(playerID)
+Q1a_2
+
+Q1a_3 <- Q1a_2 %>% inner_join(People,by=c("playerID"="playerID")) %>% group_by(playerID) %>% summarize(player_name = paste(nameFirst, nameLast),THR,TSB)
+Q1a_3
+```
+
+#1(b) (10 points) Similarly, name every pitcher in baseball history who has accumulated at least 300 wins (W) and at least 3,000 strikeouts (SO).
+
+```{r}
+
+Q1b <- Pitching %>% 
+select(playerID,W,SO) %>% group_by(playerID) %>% 
+summarize(TW=sum(W),TSO=sum(SO)) %>% 
+filter(TW>=300 & TSO>=3000) %>% 
+arrange(playerID)
+Q1b
+
+Q1b_n <- Q1b %>% inner_join(People,by=c("playerID"="playerID")) %>% group_by(playerID) %>% summarise(player_name=paste(nameFirst,nameLast),TW,TSO)
+Q1b_n
+
+```
+
+
+#1(c) (10 points) Identify the name and year of every player who has hit at least 50 home runs in a single season. Which player had the lowest batting average in that season?
+
+
+#batting_average=H/AB
+```{r}
+Q1c <- Batting %>% select(yearID,playerID,HR) %>% group_by(yearID,playerID) %>% summarize (THR=sum(HR)) %>% filter(THR>=50)
+
+Q1c_1 <- Q1c %>% inner_join(People,by=c("playerID"="playerID")) %>% mutate(player_name=paste(nameFirst,nameLast))%>% select(yearID,playerID,player_name,THR) %>% arrange(desc(THR))
+Q1c_1
+
+```
+
+```{r}
+Q1c_2 <- Q1c_1 %>% inner_join(Batting,by=c("playerID"="playerID","yearID"="yearID"))
+
+Q1c_3 <- Q1c_2 %>% mutate(batting_average = H/AB) %>% select(yearID,playerID,player_name,batting_average) %>% arrange(batting_average)
+
+Q1c_3
+```
+
+
+#2. Use the nycfights13 package and the fights and planes tables to answer the following questions:
+
+```{r}
+library(nycflights13)
+```
+
+#2(a) (10 points) What is the oldest plane (specified by the tailnum variable) that flew from New York City airports in 2013?
+
+```{r}
+flights1 <- flights %>% select(tailnum,dep_time)%>% drop_na(dep_time)
+flights1 %>% inner_join(planes,by=c("tailnum"="tailnum")) %>% drop_na(year) %>% arrange(year) %>% head(5)
+```
+#It was N381AA.
+
+#(b) (10 points) How many airplanes that flew from New York City are included in the planes table?
+
+```{r}
+flights4 <- flights1 %>% distinct(tailnum,.keep_all = TRUE) 
+flights5 <- planes %>% inner_join(flights4,by=c("tailnum"="tailnum"))
+flights5
+flights5 %>% nrow()
+planes %>% nrow()
+```
+
+# 3316 airplanes that flew from New York City are inclued in the planes table (3322). 
+
+
+#3. Generate the code to convert the following data frame to wide format.
+  grp sex meanL sdL meanR sdR
+## 1 A F 0.225 0.106 0.340 0.0849
+## 2 A M 0.470 0.325 0.570 0.3250
+## 3 B F 0.325 0.106 0.400 0.0707
+## 4 B M 0.547 0.308 0.647 0.2740
+
+    grp F.meanL F.sdL F.meanR F.sdR M.meanL M.sdL M.meanR M.sdR
+## <chr> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+## 1 A   0.225 0.106 0.34 0.0849 0.47 0.325 0.57 0.325
+## 2 B   0.325 0.106 0.4 0.0707 0.547 0.308 0.647 0.274
+
+```{r}
+dat <- data.frame(grp = c("A","A","B","B"),
+sex = c("F","M","F","M"),
+meanL = c(0.225,0.47,0.325,0.547),
+sdL = c(0.106,.325,.106,.308),
+meanR = c(.34,.57,.4,.647),
+sdR = c(0.0849, 0.325, 0.0707, 0.274)
+)
+```
+
+```{r}
+dat %>% pivot_wider(names_from = sex, values_from = c(meanL,sdL,meanR,sdR)) %>% select(,c(1,2,4,6,8,3,5,7,9))
+```
+#4. Consider the pccc icd10 dataset.
+#(a) Remove all the columns labeled with "g" and a number.
+#(b) Convert this to a long data set with three columns: id, type (pc or dx), and code.
+
+
+```{r}
+library(pccc)
+```
+
+```{r}
+pccc_icd10_dataset %>% select(-contains("g")) %>% head(5) 
+```
+
+```{r}
+pccc_icd10_dataset %>% select(-contains("g")) %>% pivot_longer(-id,names_to = "id_type",values_to = "code")%>% head(5) 
+```
+#Python 
+
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/HW3_QW_submit.ipynb
