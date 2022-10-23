@@ -1,0 +1,117 @@
+---
+title: "HW4_WQ"
+author: "Wei Qiu"
+date: "2022-10-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# 1. Answer the questions below:
+#1(a) Use the HELPrct data from the mosaicData to calculate the mean of all numeric variables (be sure to exclude missing values).
+
+```{r}
+library(tidyverse)
+library(mosaicData)
+library(ggplot2)
+head(HELPrct[,1:6])
+```
+```{r}
+HP1 <- HELPrct %>% select(where(is.numeric)) %>%  map_dbl(mean,na.rm = TRUE)
+HP1
+```
+
+
+#1(b) Find the mean of all the numeric variables stratified by sex and age group where age groups are defined as ranges of 10 years (i.e. 0-10,10-20, 20-30, etc).
+
+
+```{r}
+ageBreaks <- seq(0,120, by = 10)
+HELPrct_agegroup <- HELPrct %>% mutate(age_group=cut(age, breaks = ageBreaks)) %>% group_by(sex,age_group) %>% summarize(across(where(is.numeric), mean, na.rm = TRUE))
+HELPrct_agegroup
+```
+
+
+
+#1(c) Using the data set created in the previous problem, create a set of line plots (5)with the average age of the age group on the x-axis and each of other numeric variables on the y-axis (in separate plots, obviously!) stratified by sex. (Note: You are not allowed to use a for loop here or simply copy-and- paste 20 times!)
+
+```{r}
+# correct answer! 
+HELPrct_agegroup %>% ungroup() %>%  select(where(is.numeric)&!age&!sex) %>% colnames() %>%  map(~ggplot(HELPrct_agegroup,aes(x=age,y=.data[[.]],group=1))+geom_line()+geom_point()+facet_wrap(~sex))
+```
+
+```{r}
+#kind of working but lack of label of Y
+HELPrct_agegroup %>% map(~ggplot(HELPrct_agegroup,aes(x=age,y=.,group=1))+geom_line()+geom_point()+facet_wrap(~sex))
+```
+
+
+```{r}
+#Another method, but not great, without Y label
+# first generate a function of ggplot.
+scatter_plot2 <- function(data, x, y) {
+  ggplot(data, aes({{x}}, {{y}})) + geom_line() + geom_point() + facet_wrap(~sex)
+}
+scatter_plot2 (HELPrct_agegroup,age,cesd)
+```
+
+```{r}
+
+HE2 <- HELPrct_agegroup %>% group_by(age)
+
+HE2 %>% map(~scatter_plot2(HE2,x=age,y=.)) 
+```
+
+
+#2. The team IDs corresponding to Brooklyn baseball teams from the Teams data frame from the Lahman package are listed below. Use map int() to find the number of seasons in which each of those teams played by calling a function called count seasons. 
+
+
+```{r}
+library(Lahman)
+bk_teams <- c("BR1", "BR2", "BR3", "BR4", "BRO", "BRP", "BRF")
+```
+
+
+```{r}
+#generate a function called count_seasons
+count_seasons <- function(data,team_name){
+  data %>% select(yearID, lgID,teamID) %>% filter(teamID==team_name) %>%  group_by(yearID) %>% nrow()
+}
+
+```
+
+```{r}
+#test the function
+count_seasons(Teams,"BR3")
+```
+
+```{r}
+#answer
+bk_teams %>% map_int(count_seasons,data=Teams)
+```
+#Python answer:
+
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/HW4-QW.ipynb
+
