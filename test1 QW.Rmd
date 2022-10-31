@@ -1,0 +1,197 @@
+---
+title: "Exam1 QW"
+author: "Wei Qiu"
+date: "2022-10-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. Load the cereal data and use it to answer the following questions. (Note: For loops are not an acceptable solution for any of these questions.)
+
+```{r}
+library(tidyverse)
+library (corrr)
+cereal <- read.csv("https://raw.githubusercontent.com/gjm112/LoyolaTeaching/main/cereal.csv")
+manufactures <- read.csv("https://raw.githubusercontent.com/gjm112/LoyolaTeaching/main/cereal_mfr.csv")
+
+```
+
+1(a) (5 points) Merge the manufacturer full name onto the cereal data set.
+
+```{r}
+cereal_merge <- cereal %>% inner_join(manufactures,by=c("mfr"="mfr"))
+cereal_merge %>% head(5)
+```
+
+1(b) (5 points) For this problem, we will only consider low sodium cereals" defined as cereals with less than or equal to 200mg of sodium.
+Create a table for the low sodium cereals that shows the mean calories, mean protein, and mean fat content by the full name of the
+manufacturer.
+
+```{r}
+cereal_merge1 <- cereal_merge %>% select(mfr_full,calories, protein, fat,sodium) %>% filter(sodium <= 200) %>% group_by(mfr_full) %>% summarize(mean_sodium = mean(sodium),mean_calories = mean(calories),mean_protein = mean(protein),mean_fat = mean(fat))
+cereal_merge1
+```
+(c) (5 points) Which 5 cereals have the highest calories per cup (i.e calories / cups)?
+
+```{r}
+cereal_merge5 <- cereal_merge %>% mutate(calories_per_cup = calories/cups) %>% select(name,calories_per_cup) %>%  arrange(desc(calories_per_cup)) 
+cereal_merge5 %>% head(5)
+```
+(d) (5 points) For each manufacturer, which of their cereals has the lowest calories per cup (i.e. calories divided by cups)?
+
+```{r}
+cereal_merge2 <- cereal_merge %>% mutate(calories_per_cup = calories/cups) %>%  group_by(mfr_full) %>% summarise(min_calories_cup=min(calories_per_cup))%>% inner_join(cereal_merge5,by=c("min_calories_cup"="calories_per_cup"))
+cereal_merge2 %>% head(5)
+```
+(e) (10 points) Create a scatterplot of sugars vs rating for cereals manufactured by General Mills, Kellogg's, and Post with color used to
+represent each of the different manufacturers. Add a trend line using
+loess through each of the groups separately. Comment on the rela-
+relationship between sugars and rating for these manufacturers (target
+figure shown below).
+
+```{r}
+#generate the new dataframe
+cereal_merge3 <- cereal_merge %>% select(mfr_full,sugars,rating) %>% filter(mfr_full=="General Mills"|mfr_full=="Post"|mfr_full=="Kelloggs") 
+cereal_merge3 %>% head(10)
+
+#plots
+plots <- ggplot(data=cereal_merge3,aes(x=sugars,y=rating))+geom_point(aes(color = mfr_full))+geom_smooth(aes(color = mfr_full),method = "loess", se = TRUE)
+plots
+
+# comments: The level of sugars in the cereals was negatively correlated with the rating from all these manufactures. 
+```
+
+(f) (10 points) Find the correlation between protein and potassium for
+each of the shelves (the correlation function in R is "cor").
+
+
+```{r}
+cereal_merge %>% select(shelf,protein,potass) %>% group_by(shelf) %>% group_modify(~correlate(.x),keep=FALSE)
+```
+
+(g) (10 points) Recreate the table presented below. The rows are the
+shelf 1, 2, and 3 and each column is a quantile of the distribution of
+calories for each shelf. So for example, the 80-th percentile of calories
+for cereal found on shelf 3 is 130.
+## # A tibble: 3 x 12
+## # Groups: shelf [3]
+## shelf 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1
+## <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+## 1 1 80 90 98 100 100 105 110 110 110 110 110
+## 2 2 90 100 100 110 110 110 110 110 120 120 120
+## 3 3 50 70 90 100 100 110 110 120 130 140 160
+
+```{r}
+#generate narrow data
+g_narrow <- cereal_merge %>% group_by(shelf) %>%  summarise(quantile = scales::percent(c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1.0)),
+            calories = quantile(calories, c(0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1.0)))
+g_narrow
+
+#pivot wider
+
+g_wider <- g_narrow %>% pivot_wider(names_from = quantile,values_from = calories) 
+g_wider
+```
+
+
+2. Use the data found here about food inspection found here to answer the following questions. (Note: Remove observations with license number 0 be-
+fore beginning!) https://www.dropbox.com/s/ra8s2tonbl037m2/inspections clean.csv?dl=0
+
+```{r}
+inspection <- read.csv("inspections_clean.csv")
+inspection %>% head(1)
+```
+
+(a) (10 points) What is the pass rate by inspection type?
+
+
+```{r}
+# I did not include pass w/conditions as suggested in 2c. 
+inspection_test <- inspection
+inspection_test %>% mutate(pass = if_else(results=="Pass",1,0)) %>% select (inspection_type,pass) %>%  group_by(inspection_type) %>% summarise(pass_rate = sum(pass) / nrow(inspection_test))
+```
+(b) (10 points) Find all the businesses that have ever had a failed inspection. Using only these businesses, create a contingency table of all the inspections for these businesses of risk type by inspection type.
+It should look like the table below:
+## # A tibble: 4 x 4
+## # Groups: risk [4]
+## risk canvass complaint license
+## <chr> <int> <int> <int>
+## 1 Risk 1 (High) 60151 14355 10646
+## 2 Risk 2 (Medium) 10101 4556 2942
+## 3 Risk 3 (Low) 1901 875 1854
+## 4 <NA> NA NA 1
+
+
+```{r}
+#Find all the businesses that have ever had a failed inspection
+inspection_test4 <-inspection %>% filter(results=="Fail") %>% select(dba_name) %>% distinct()
+inspection_test4 %>% head(5)
+```
+
+```{r}
+inspection_test5 <- inspection  %>% inner_join(inspection_test4,by=c("dba_name"="dba_name")) %>% group_by(risk,inspection_type) %>% summarise(n=length(risk)) %>% pivot_wider(names_from = inspection_type,values_from = n)
+inspection_test5
+```
+
+(c) (10 points) What is the restaurant with the largest number of inspections that has passed (do NOT include \passed with conditions")
+ALL of their inspections and how many inspections did they have?
+That is which restaurant had the most inspections without any failure?
+
+
+```{r}
+#find all business failed or passed with conditions
+inspection_fail <- inspection %>% filter(facility_type=="restaurant") %>% filter(results!="Pass") %>% select(dba_name) %>% distinct() 
+inspection_fail %>% head(5)
+```
+
+```{r}
+inspection %>% filter(facility_type=="restaurant") %>% anti_join(inspection_fail,by="dba_name") %>% filter(results=="Pass") %>% group_by(dba_name) %>% summarize(inspection_number=length(results)) %>% arrange(desc(inspection_number)) %>% head(5)
+```
+#MANNY'S CAFE MIDWAY had the most inspections without any failure.
+
+
+```{r}
+#double check
+inspection %>% select(dba_name,results) %>% filter(dba_name=="MANNY'S CAFE MIDWAY") %>% head(5)
+```
+
+(d) (10 points) Make a stacked bar chart showing the number of tests for
+grocery stores, restaurants, and schools with each bar stratified by
+results (target plot is displayed below).
+
+```{r}
+inspection %>% filter(facility_type %in% c("restaurant","school","grocery store")) %>% group_by(results,facility_type) %>% summarise(number_of_tests=length(inspection_id)) %>% ggplot(aes(x = facility_type, y = number_of_tests, fill = results)) + 
+  geom_bar(stat = "identity")
+```
+
+
+(e) (10 points) Make side by side boxplots of the distribution of the
+number of tests establishments have performed on them stratified by
+whether or not an establishment has ever failed a failed test (target
+plot is displayed below).
+
+
+```{r}
+# find the inspection number from the establishment that ever failed or not
+test1 <- inspection %>% mutate (fail=ifelse(results=="Fail",1,0)) %>% group_by(dba_name) %>%summarise(any_fail=if_else(sum(fail)>0,TRUE,FALSE),inspection_number=length(inspection_id)) %>% arrange(desc(inspection_number))
+test1 %>% head(5)
+```
+```{r}
+# calculate the percentage of inspections among all
+test2 <- test1 %>% mutate(n=100*inspection_number/sum(inspection_number))
+test2 %>% head(5)
+```
+
+```{r}
+# plots
+library(mosaicData)
+ggplot(data=test2,aes(x=any_fail,y=n)) + geom_boxplot() 
+```
+# I cannot get the targeted results. I guess I don't understand what kind of distribution need to be analyzed for this question.  
+
+
+Answers with Python
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/test1_WQ.ipynb
