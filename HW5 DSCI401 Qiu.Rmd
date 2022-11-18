@@ -1,0 +1,24 @@
+---
+title: "HW5_WQ"
+author: "Wei Qiu"
+date: "2022-11-04"
+output: html_document
+---
+
+1. Write no more than TWO paragraphs discussing the issues arising from
+each of these scenarios:
+
+(a)	In 2006, AOL released a database of search terms that users had used
+in the prior month (see http://www.nytimes.com/2006/08/09/technology/09aol.html).
+Research this disclosure and the reaction that ensued. What ethical issues are involved? What potential impact has this disclosure had?
+
+#The ethical issues involved here are that privacy was not sufficiently protected by AOL. Although it was de-identified as user No. 4417749, the identity was too easy to be discerned. As Ms. Arnold, who was the No.4417749, said, “We all have a right to privacy. Nobody should have found this all out.”  While big data needs to be analyzed for many purposes, how to guarantee that individuals’ privacy not be breached and anonymity not be compromised is a big challenge. Clearly, AOL did not pay attention and did enough to protect the privacy of No. 4417749. The disclosure has gotten a lot of attention for privacy protection in big data analysis. It had a positive impact that promoted many companies to seek approaches to protect privacy. However, the failure of privacy protection is and will be happening. We need to be aware of this problem when we do data analysis and build up more effective approaches to protect privacy.
+
+(b)	A Slate article (http://tinyurl.com/slate-ethics) discussed whether race/ethnicity should be included in a predictive model for how long a homeless family would stay in homeless services. Discuss the ethical considerations involved in whether race/ethnicity should be included as a predictor in the model. 
+
+#The author did not include race/ethnicity as a predictor in the predictive model for how long a homeless family would stay in homeless services. He/she thought that choosing race as a characteristic in their model would have been unethical. It made sense as they were using historical data and trained the biased data, given the history of racism. However, I also think that including race/ethnicity in the model might also be important. If we did find that homeless families with certain race/ethnicity stayed in homeless services for a shorter time, the results would push us to pay attention to and seek to solve the problems. If we ignore the data purposely because of a concern about using historical data, we will not find out the problem to me, which is also unethical. I think we need to be honest to analyze the data, and “the ethical data scientist would strive to improve the world”, but not ignore problems.  
+
+
+(c)	A company uses a machine-learning algorithm to determine which job advertisement to display for users searching for technology jobs. Based on past results, the algorithm tends to display lower-paying jobs for women than for men (after controlling for other characteristics than gender). What ethical considerations might be considered when reviewing this algorithm?
+
+#When reviewing this algorithm, we have to consider why it tends to display lower-paying jobs for women than for men. Is it because women tend to look for lower-paying jobs than men, or is it because there are fewer higher-paying technology jobs available for women than men, or is it because fewer women have the required education, training, and skill sets for the higher-paying jobs? By considering these possibilities, we can test these hypotheses by doing some research and conducting data analysis. Finding out problems is not a bad thing; in fact, it is a good thing. The important thing is to solve the problems. As data scientists, we can use our skill sets to analyze the data, identify the issues, and find answers by collaborating with other experts in different fields. 
