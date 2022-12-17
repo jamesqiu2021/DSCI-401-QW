@@ -1,0 +1,206 @@
+---
+title: "Exam 2 WQ"
+author: "Wei Qiu"
+date: "2022-12-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+speed <- read.csv("Speed_Camera_Violations.csv")
+red <- read.csv("Red_Light_Camera_Violations.csv")
+map <- read.csv("Map_-_Speed_Camera_Locations.csv")
+library(Hmisc)
+library(geosphere)
+```
+
+1. (10 points) List the addresses of the ten cameras with the most red light
+violations. List the addresses of the ten cameras with the most speeding
+violations.
+
+```{r}
+red %>% group_by(CAMERA.ID) %>% summarise(V_N=sum(VIOLATIONS)) %>% arrange(desc(V_N)) %>% head(10)
+
+speed %>% group_by(CAMERA.ID) %>% summarise(V_N=sum(VIOLATIONS)) %>% arrange(desc(V_N)) %>% head(10)
+```
+2. (10 points) Using the red light data, make a line plot with month on the
+x-axis and total violations on the y-axis with a separate line for weekends
+(i.e. Saturday and Sunday) and weekdays (i.e. Monday through Friday).
+What month has the most red light violations on the weekends? What
+month has the most red light violations on the weekdays?
+
+```{r}
+
+red1 <- red %>% mutate(date= as.Date(VIOLATION.DATE,format = "%m/%d/%Y")) %>%  mutate(month=month(date)) %>% mutate(day=wday(date,label = TRUE)) %>% mutate(weekends=ifelse(day=="Sat"|day=="Sun",TRUE,FALSE)) 
+
+red2 <- red1 %>% group_by(month,weekends) %>% summarise(violations=sum(VIOLATIONS)) %>% arrange(desc(violations)) 
+red2 %>% print(n=24)
+
+red2 %>% ggplot(aes(x=month,y=violations))+ geom_line(aes(color=weekends))+ scale_x_continuous(breaks=seq(0,12,1))
+
+# July has the most red light violations on both the weekends and the weekdays.
+
+```
+
+3. (20 points) Create a table that displays the ratio of total speeding violations to total red light violations by month. Which month has the largest ratio and which month has the smallest ratio?
+
+```{r}
+speed1 <- speed %>% mutate(date= as.Date(VIOLATION.DATE,format = "%m/%d/%Y")) %>%  mutate(month=month(date)) %>% group_by(month) %>% summarise(s_violations=sum(VIOLATIONS)) %>% arrange(desc(s_violations)) 
+speed1
+
+
+red3 <- red %>% mutate(date= as.Date(VIOLATION.DATE,format = "%m/%d/%Y")) %>%  mutate(month=month(date)) %>% group_by(month) %>% summarise(r_violations=sum(VIOLATIONS)) %>% arrange(desc(r_violations)) 
+red3
+
+speed1 %>% inner_join(red3,by="month") %>% mutate(ratio=s_violations/r_violations) %>% arrange(desc(ratio))
+
+# March had the largest ratio and August had the smallest ratio. 
+```
+
+4. (20 points) Using only speed cameras with a latitude greater than or equal to 41.99, create a table with address as the rows, month as the column,and violations per day (i.e. total violations divided by the number of days in the month) in the table. (Note: For simplicity, assume February always has 28 days).
+
+```{r}
+map2 <- map
+map2 <- map2 %>% mutate(ADDRESS = str_replace_all(ADDRESS, "\\(|\\)","")) %>% mutate(ADDRESS=gsub("Speed Camera","",ADDRESS))  
+head(map2,5)  # Remove the "(Speed Camera)" from map table so it can merge with speed table 
+
+speed2 <- speed %>% select(ADDRESS,CAMERA.ID,VIOLATION.DATE,VIOLATIONS)
+head(speed2,5)
+
+map3 <- map2 %>% mutate(ADDRESS=toupper(ADDRESS)) %>% mutate(ADDRESS=trimws(ADDRESS, which = c("right")))
+head(map3,10) # Change ADDRESS to UPCASE and remove the Strip Trailing Space.
+
+
+merge <- map3 %>% inner_join(speed2,by="ADDRESS")
+head(merge,5) # merge the tables
+
+merge <- merge %>% mutate(date= as.Date(VIOLATION.DATE,format = "%m/%d/%Y")) %>%  mutate(month=month(date)) %>% mutate(monthdays=monthDays(date)) 
+head(merge,5) #generate date, month, and monthdays
+
+q4 <- merge %>% filter(LATITUDE>=41.99) %>% mutate(vm=VIOLATIONS/monthdays) %>% group_by(ADDRESS,month) %>% summarise(v_d=sum(vm))  
+print(q4,n=12)
+
+q4 %>% pivot_wider(names_from = month,values_from = v_d) #pivot_wider
+
+
+```
+
+5. (20 points) Using only speed cameras with a latitude greater than or equal to 41.9 (This is a slightly larger area than the previous question), find the five closest red light cameras to EACH of the speed cameras that meet the condition to form a group of red light cameras. For each group of red light cameras, compute the total number of red light violations in the years 2020 and 2021. What group of red light cameras had the most violations? What group of red light cameras had the fewest violations?
+
+```{r}
+# find the speed cameras whose latitude is more than 41.9.
+q5_speed <- merge %>% filter(LATITUDE>=41.9) %>% select(CAMERA.ID,LATITUDE,LONGITUDE) %>% distinct()
+q5_speed # there are 50 speed cameras that meet the condition
+
+# Data wrangling Data wrangling  
+
+red_q5 <- red %>% select(CAMERA.ID,VIOLATION.DATE,VIOLATIONS,LATITUDE,LONGITUDE,LOCATION) %>% mutate(v.date= as.Date(VIOLATION.DATE,format = "%m/%d/%Y")) %>% mutate(year=as.numeric(format(v.date,'%Y'))) %>%  drop_na() 
+head(red_q5) # drop the cameras which don't have lat and long location, and extract year from the date.
+
+q5_red <- red_q5 %>% select(CAMERA.ID,LATITUDE,LONGITUDE) %>% distinct() 
+# check how many red cameras are available (347)
+
+r1 <- q5_red %>% select(CAMERA.ID)%>% rename(r.camera.ID=CAMERA.ID)
+
+s1 <- q5_speed %>% select(CAMERA.ID)%>% rename(s.camera.ID=CAMERA.ID)
+head(s1,5)
+
+merge_cross <- tidyr::crossing(r1, s1) # cross join 
+
+r2 <- q5_red %>% rename(r.camera.ID=CAMERA.ID,r.LAT=LATITUDE,r.LONG=LONGITUDE)
+s2 <- q5_speed %>%  rename(s.camera.ID=CAMERA.ID,s.LAT=LATITUDE,s.LONG=LONGITUDE)
+
+distant <- merge_cross %>% inner_join(r2,by="r.camera.ID")%>% inner_join(s2,by="s.camera.ID") %>% mutate(dist = distHaversine(cbind(r.LONG,r.LAT), cbind(s.LONG,s.LAT))) # calculate the distance between every speed camera and every red camera (mutate_dist)
+
+
+r3 <- red_q5 %>% rename(r.camera.ID=CAMERA.ID)
+head(r3)
+
+q5_merge3 <- distant %>% inner_join(r3,by="r.camera.ID")
+head(q5_merge3)
+
+q5_merge4 <- q5_merge3 %>% select(r.camera.ID,s.camera.ID,dist,VIOLATIONS,v.date) %>% mutate(year=year(v.date))
+head(q5_merge4) # The final working table 
+
+#Test one speed camera: CHI114 and find five closest red cameras 
+
+q5_merge4 %>% filter(s.camera.ID=="CHI049") %>% filter(year==2020|year==2021) %>%  group_by(s.camera.ID,r.camera.ID,dist) %>% summarise(V=sum(VIOLATIONS)) %>% arrange(dist) %>% head(5)
+
+# Generate a function
+
+top5 <- function(s.camera, data) {
+ data %>% filter(s.camera.ID==s.camera) %>%  filter(year==2020|year==2021) %>%  group_by(s.camera.ID,r.camera.ID,dist) %>% summarise(V=sum(VIOLATIONS)) %>% arrange(dist) %>% head(5)
+}
+
+top5("CHI049",q5_merge4) # Test the function
+
+s_cameras <- q5_merge4 %>% pull(s.camera.ID) %>% unique() 
+s_cameras # pull the s cameras 
+
+violations=s_cameras %>% map_dfr(top5,q5_merge4) # map 
+head(violations,10)
+
+v=violations %>% group_by(s.camera.ID) %>% summarise(v=sum(V)) %>% arrange(desc(v)) 
+head(v,5)
+
+# The group which is closest to the speed camera CHI093 had the most violations.   
+
+tail(v,5) 
+
+# The group which is closest to the speed camera CHI049 had the least violations. 
+
+# List of red cameras with the most and fewest violations:
+
+violations %>% filter(s.camera.ID=="CHI093") # the most V
+violations %>% filter(s.camera.ID=="CHI049") # the fewest V
+
+
+```
+
+6. (20 points) Join the speed violations data with the speed map data on the
+variables address (You've got some cleaning to do!). The speed map data
+contain the go live date for each camera, which will tell you how many
+days the camera has been active. Using this information, compute the
+number of violations per active day for each camera in the city. What are
+the addresses of the cameras with the top ten average number of violations
+per day? What are the addresses of the bottom ten? (Note: Use the latest
+day in the speeding violations data set to calculate the number of active
+days for a camera. That is, the number of days a camera is considered
+active is the difference between the latest date and the go live date plus 1
+(gotta include latest day!).)
+
+```{r}
+# The tables were merged in Q4(please see Q4). The merged table was named merge.
+head(merge)
+merge1 <- merge %>% mutate(go_live_date= as.Date(GO.LIVE.DATE,format = "%m/%d/%Y"))
+head(merge1)
+
+# the last update for speed violation dataset was on December 10, 2022.
+
+date1 = as.Date("2020-12-10")
+
+merge1 <- merge1 %>% mutate(active_days = as.numeric(difftime(date1,go_live_date, units = "days"))+1)
+
+
+# What are the addresses of the cameras with the top ten average number of violations per day?
+
+merge1 %>% group_by(CAMERA.ID,ADDRESS) %>% summarise(v_d=sum(VIOLATIONS/active_days)) %>% arrange(desc(v_d)) %>% head(10) 
+
+# the bottom 10
+
+merge1 %>% group_by(CAMERA.ID,ADDRESS) %>% summarise(v_d=sum(VIOLATIONS/active_days)) %>% arrange(v_d) %>% head(10)
+
+```
+
+Python:
+
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/test_2_WQ.ipynb
+

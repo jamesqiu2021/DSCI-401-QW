@@ -1,0 +1,131 @@
+---
+title: "HW7-WQ"
+author: "Wei Qiu"
+date: "2022-12-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Use the MySQL database imdb hosted at scidb.smith.edu (usersname: sds192,
+password: DSismfc@S) to answer the following questions.
+
+1. Write a SQL query to create a list of all movies that Kevin Bacon has ever been in and convert this to a data frame object in R/Python.
+
+```{r}
+library(tidyverse)
+library(RMySQL)
+db <- dbConnect(
+  MySQL(),
+  host = "scidb.smith.edu",
+  user = "sds192",
+  password = "DSismfc@S",
+  dbname = "imdb" # one database for movie and TV
+)
+```
+
+
+```{r}
+# list of tables
+dbListTables(db)
+```
+
+
+```{r}
+# I will need person_info table, name table, cast_info table, and title.The connection between person_info and cast_info is person_id, and the relationship between cast_info and title is movie_id. person_info and name table have person_id. 
+
+# Strategy: combine name with person_info by person_id, and then combine them with cast_info by person_id, and then combine them with title with movie_id.  
+
+# relationship among tables: https://www.researchgate.net/figure/Complete-schema-of-the-IMDb-database-with-8-main-relations-movie-person-genre_fig1_348079657
+
+# Double check the colnames
+
+#person_info <- tbl(db,"person_info")
+#person_info %>% colnames()
+#person_info %>% head(5)
+
+#name <- tbl(db,'name')
+#name %>% colnames()
+#name %>% head(5)
+
+#cast_info <- tbl(db,'cast_info')
+#cast_info %>% colnames()
+#cast_info %>% head(5)
+
+
+#title <- tbl(db,'title')
+#title %>% colnames()
+#title <- title %>% head(20)
+```
+
+
+```{r}
+
+# Strategy: combine name (n.id) with cast_info by person_id, and then combine them with title with movie_id.
+
+
+```
+
+```{r}
+#Method 1
+
+q <- "SELECT DISTINCT t.title, ci.movie_id,t.production_year
+FROM name n
+JOIN cast_info ci ON ci.person_id = n.id
+JOIN title t ON t.id = ci.movie_id
+WHERE n.name='Bacon, Kevin'
+AND t.kind_id=1
+ORDER BY production_year
+DESC;"
+
+result = dbSendQuery(db, q) 
+fetch(result)
+```
+
+
+```{r}
+# Method 2.
+q <- "SELECT DISTINCT t.title, ci.movie_id,t.production_year
+FROM name n, cast_info ci,title t
+WHERE ci.person_id = n.id
+AND t.id = ci.movie_id
+AND n.name='Bacon, Kevin'
+AND t.kind_id=1
+ORDER BY production_year
+DESC;"
+
+result = dbSendQuery(db, q) 
+fetch(result)
+```
+
+
+2. Find a list of every actor/actress who has appeared in a movie with Kevin Bacon.
+
+```{r}
+q <- "SELECT DISTINCT ci.person_id, n.name
+FROM name n
+JOIN cast_info ci ON ci.person_id = n.id
+JOIN title t ON t.id = ci.movie_id
+WHERE t.kind_id=1
+AND (ci.role_id=1 OR ci.role_id=2)
+AND ci.movie_id IN 
+(SELECT DISTINCT ci.movie_id
+FROM name n
+JOIN cast_info ci ON ci.person_id = n.id
+JOIN title t ON t.id = ci.movie_id
+WHERE n.name='Bacon, Kevin'
+AND t.kind_id=1
+);"
+result = dbSendQuery(db, q) 
+fetch(result,-1)
+```
+
+# disconnect to release memory
+DBI::dbDisconnect(db)
+
+# Python homework
+
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/Copy_of_hw7_qw.ipynb
+

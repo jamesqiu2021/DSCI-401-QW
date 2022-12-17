@@ -1,0 +1,36 @@
+---
+title: "HW6-DS401-QW"
+author: "Wei Qiu"
+date: "2022-11-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. Using the data whately 2015 from the macleish package, create an interactive plot using plotly (or ggplotly) displaying time (in days) on the x-axis
+and temperature on the y-axis with three lines: one for the high temperature of the day, one for the average temperature of the day, and one for
+the low temperature of the day. A csv version of the file can be found here:
+https://www.dropbox.com/s/m2nt50qanpijp0m/whately2015.csv?dl=0
+
+```{r}
+wht2015 <- read.csv("whately2015.csv")
+head(wht2015)
+library (tidyverse)
+library(lubridate)
+library(ggplot2)
+library(plotly)
+library(dygraphs)
+```
+
+```{r}
+wt2 <- wht2015
+w <- mdy_hms(wt2$when)
+wt3 <- wt2 %>% mutate(dates= as.Date(w)) %>% group_by(dates) %>% summarise(high_temp=max(temperature),aver_temp=mean(temperature),low_temp=min(temperature)) %>% pivot_longer(!dates,names_to = "temp_type",values_to ="temperature") %>% ggplot(aes(x=dates,y=temperature))+ geom_line(aes(color=temp_type)) 
+
+ggplotly(wt3)
+```
+
+# Python 
+https://github.com/jamesqiu2021/DSCI-401-QW/blob/main/HW6_QW.ipynb
